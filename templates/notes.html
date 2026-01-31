@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block page_title %}📝 Notes for Chitty{% endblock %}
+
+{% block extra_css %}
+<style>
+    .note-card { border-radius: 8px; margin-bottom: 12px; transition: box-shadow 0.2s; }
+    .note-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .note-card.status-pending { border-left: 4px solid #2196F3; }
+    .note-card.status-seen { border-left: 4px solid #FF9800; }
+    .note-card.status-processed { border-left: 4px solid #4CAF50; }
+    .note-status-badge { font-size: 0.8rem; }
+    .note-text { font-size: 1rem; line-height: 1.6; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Add Note -->
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h4 class="card-header__title m-0"><i class="material-icons icon-16pt mr-1">edit</i> Leave a Note for Chitty</h4>
+            </div>
+            <div class="card-body">
+                <form id="add-note-form">
+                    <div class="form-group">
+                        <textarea class="form-control" id="note-text" rows="5" placeholder="Write your note here... Chitty will see it and can mark it as processed." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="material-icons icon-16pt mr-1">send</i> Add Note
+                    </button>
+                </form>
+                <hr>
+                <div class="text-muted small">
+                    <p class="mb-1"><strong>Status Legend:</strong></p>
+                    <div>🔵 <strong>Pending</strong> — Not yet seen by Chitty</div>
+                    <div>👁️ <strong>Seen</strong> — Chitty has read it</div>
+                    <div>✅ <strong>Processed</strong> — Chitty has acted on it</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes List -->
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-white d-flex align-items-center">
+                <h4 class="card-header__title flex m-0">All Notes</h4>
+                <span class="text-muted">{{ notes|length }} notes</span>
+            </div>
+            <div class="card-body" id="notes-list">
+                {% if notes %}
+                    {% for note in notes %}
+                    <div class="card note-card status-{{ note.status }}" id="note-{{ note.id }}">
+                        <div class="card-body py-3">
+                            <div class="d-flex align-items-start">
+                                <div class="flex">
+                                    <div class="note-text">{{ note.text }}</div>
+                                    <div class="mt-2 d-flex align-items-center justify-content-between">
+                                        <small class="text-muted">
+                                            <i class="material-icons icon-16pt">schedule</i>
+                                            {{ note.timestamp[:16].replace('T', ' ') }}
+                                            {% if note.updated_at %}
+                                            · Updated {{ note.updated_at[:16].replace('T', ' ') }}
+                                            {% endif %}
+                                        </small>
+                                        <div>
+                                            {% if note.status == 'pending' %}
+                                                <span class="badge badge-primary note-status-badge">🔵 Pending</span>
+                                            {% elif note.status == 'seen' %}
+                                                <span class="badge badge-warning note-status-badge">👁️ Seen</span>
+                                            {% elif note.status == 'processed' %}
+                                                <span class="badge badge-success note-status-badge">✅ Processed</span>
+                                            {% endif %}
+                                            <div class="btn-group btn-group-sm ml-2">
+                                                {% if note.status != 'seen' %}
+                                                <button class="btn btn-outline-warning btn-sm py-0" onclick="updateNote('{{ note.id }}', 'seen')">👁️</button>
+                                                {% endif %}
+                                                {% if note.status != 'processed' %}
+                                                <button class="btn btn-outline-success btn-sm py-0" onclick="updateNote('{{ note.id }}', 'processed')">✅</button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="material-icons" style="font-size: 64px; opacity: 0.3;">sticky_note_2</i>
+                        <div class="mt-2">No notes yet. Leave one for Chitty!</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('add-note-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var text = document.getElementById('note-text').value.trim();
+        if (!text) return;
+
+        fetch('/api/notes/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({text: text})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                location.reload();
+            } else {
+                alert(data.error || 'Failed to add note');
+            }
+        });
+    });
+
+    function updateNote(id, status) {
+        fetch('/api/notes/update', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: id, status: status})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                location.reload();
+            } else {
+                alert(data.error || 'Failed to update note');
+            }
+        });
+    }
+
+    // Auto-refresh notes
+    setInterval(function() {
+        fetch('/api/notes')
+            .then(r => r.json())
+            .then(data => {
+                var countEl = document.querySelector('.card-header .text-muted');
+                if (countEl) countEl.textContent = data.count + ' notes';
+            });
+    }, 15000);
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block page_title %}User Management{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="/">Home</a></li>
+<li class="breadcrumb-item active">Admin</li>
+{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="card">
+    <div class="card-header d-flex align-items-center">
+        <div class="flex">
+            <h5 class="card-title m-0"><i class="material-icons icon-16pt mr-1">people</i> Users</h5>
+        </div>
+        <a href="{{ url_for('admin_create_user') }}" class="btn btn-primary btn-sm">
+            <i class="material-icons icon-16pt mr-1">person_add</i> Create User
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Created At</th>
+                    <th>Created By</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>
+                        <strong>{{ user.username }}</strong>
+                        {% if user.id == current_user.id %}
+                        <span class="badge badge-soft-primary ml-1">You</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.role == 'admin' %}
+                        <span class="badge badge-warning">Admin</span>
+                        {% else %}
+                        <span class="badge badge-info">Viewer</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.created_at[:16].replace('T', ' ') }}</td>
+                    <td>{{ user.created_by }}</td>
+                    <td class="text-right">
+                        {% if user.id != current_user.id %}
+                        <form method="POST" action="{{ url_for('admin_delete_user', user_id=user.id) }}"
+                              style="display:inline" onsubmit="return confirm('Delete user {{ user.username }}?')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="material-icons icon-16pt">delete</i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

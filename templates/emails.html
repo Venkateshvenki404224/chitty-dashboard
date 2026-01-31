@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block page_title %}Email Monitor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h4 class="card-header__title m-0">Monitor Status</h4>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="material-icons text-primary mr-2" style="font-size: 32px;">account_circle</i>
+                    <div>
+                        <div class="font-weight-bold">{{ email_status.account_masked }}</div>
+                        <small class="text-muted">Monitored Account</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="mb-2">
+                    <i class="material-icons icon-16pt mr-1 {{ 'text-success' if email_status.monitor_script else 'text-danger' }}">
+                        {{ 'check_circle' if email_status.monitor_script else 'cancel' }}
+                    </i>
+                    email_monitor.py {{ 'available' if email_status.monitor_script else 'missing' }}
+                </div>
+                <div>
+                    <i class="material-icons icon-16pt mr-1 {{ 'text-success' if email_status.checker_script else 'text-danger' }}">
+                        {{ 'check_circle' if email_status.checker_script else 'cancel' }}
+                    </i>
+                    email_checker.py {{ 'available' if email_status.checker_script else 'missing' }}
+                </div>
+                <hr>
+                <button class="btn btn-primary btn-block" id="check-emails-btn" onclick="checkEmails()">
+                    <i class="material-icons icon-16pt mr-1">refresh</i> Run Email Check
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h4 class="card-header__title m-0">Watched Senders</h4>
+            </div>
+            <div class="card-body">
+                {% for sender in email_status.watched_senders %}
+                <div class="d-flex align-items-start mb-3">
+                    <div class="avatar avatar-sm mr-2" style="width: 40px; height: 40px;">
+                        <span class="avatar-title bg-info rounded-circle">
+                            <i class="material-icons">person</i>
+                        </span>
+                    </div>
+                    <div>
+                        <div class="font-weight-bold">{{ sender.email }}</div>
+                        <small class="text-muted">{{ sender.context }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not email_status.watched_senders %}
+                <div class="text-center text-muted py-3">No watched senders configured</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h4 class="card-header__title m-0">Check Results</h4>
+            </div>
+            <div class="card-body" id="email-results">
+                <div class="text-center text-muted py-4">
+                    <i class="material-icons" style="font-size: 48px; opacity: 0.3;">mail_outline</i>
+                    <div class="mt-2">Click "Run Email Check" to check for new emails</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function checkEmails() {
+    var btn = document.getElementById('check-emails-btn');
+    var results = document.getElementById('email-results');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="material-icons icon-16pt mr-1 spin">refresh</i> Checking...';
+    results.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary" role="status"></div><div class="mt-2">Checking emails...</div></div>';
+
+    fetch('/api/emails/check')
+        .then(r => r.json())
+        .then(data => {
+            var statusClass = data.status === 'success' ? 'success' : 'danger';
+            var html = '<div class="alert alert-' + statusClass + '">';
+            html += '<strong>Status:</strong> ' + data.status + '<br>';
+            html += '<strong>Checked at:</strong> ' + data.checked_at + '</div>';
+            if (data.output) {
+                html += '<pre style="max-height: 300px; overflow-y: auto; font-size: 0.85rem; background: #f5f5f5; padding: 10px; border-radius: 4px;">' + data.output.replace(/</g, '&lt;') + '</pre>';
+            }
+            if (data.error) {
+                html += '<div class="alert alert-warning mt-2"><strong>Error:</strong> ' + data.error.replace(/</g, '&lt;') + '</div>';
+            }
+            results.innerHTML = html;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="material-icons icon-16pt mr-1">refresh</i> Run Email Check';
+        })
+        .catch(err => {
+            results.innerHTML = '<div class="alert alert-danger">Failed to check emails: ' + err + '</div>';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="material-icons icon-16pt mr-1">refresh</i> Run Email Check';
+        });
+}
+</script>
+{% endblock %}

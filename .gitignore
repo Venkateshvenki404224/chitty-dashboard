@@ -1,0 +1,21 @@
+# Virtual environment
+venv/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Sensitive data (password hashes, runtime state)
+data/users.json
+data/status.json
+data/activity.log
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+
+# Environment variables
+.env

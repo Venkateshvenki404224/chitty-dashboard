@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block page_title %}Create User{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="/">Home</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('admin_panel') }}">Admin</a></li>
+<li class="breadcrumb-item active">Create User</li>
+{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title m-0"><i class="material-icons icon-16pt mr-1">person_add</i> Create New User</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin_create_user') }}">
+                    <div class="form-group">
+                        <label class="text-label" for="username">Username</label>
+                        <input type="text" id="username" name="username" class="form-control"
+                               placeholder="Enter username" required autofocus>
+                    </div>
+                    <div class="form-group">
+                        <label class="text-label" for="password">Password</label>
+                        <input type="password" id="password" name="password" class="form-control"
+                               placeholder="Enter password" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="text-label" for="confirm_password">Confirm Password</label>
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-control"
+                               placeholder="Confirm password" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="text-label" for="role">Role</label>
+                        <select id="role" name="role" class="form-control">
+                            <option value="viewer">Viewer</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin_panel') }}" class="btn btn-light">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="material-icons icon-16pt mr-1">check</i> Create User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

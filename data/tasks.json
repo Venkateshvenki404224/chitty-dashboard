@@ -1,0 +1,70 @@
+[
+  {
+    "id": "d50bbe2a",
+    "text": "Test dashboard upgrade",
+    "priority": "high",
+    "column": "done",
+    "section": "",
+    "timestamp": "2026-01-31T13:17:32.472595",
+    "moved_at": "2026-01-31T13:42:58.576782"
+  },
+  {
+    "id": "chitty-email-watch",
+    "text": "Monitor emails from vaishnavi@local-narratives.com",
+    "priority": "normal",
+    "column": "in_progress",
+    "section": "Monitoring",
+    "timestamp": "2026-01-31T13:42:58.576805"
+  },
+  {
+    "id": "chitty-heartbeat",
+    "text": "Heartbeat checks - email monitor & scheduler",
+    "priority": "normal",
+    "column": "in_progress",
+    "section": "Monitoring",
+    "timestamp": "2026-01-31T13:42:58.576805"
+  },
+  {
+    "id": "chitty-dashboard-polish",
+    "text": "Dashboard UI polish & improvements",
+    "priority": "high",
+    "column": "done",
+    "section": "Development",
+    "timestamp": "2026-01-31T13:42:58.576805",
+    "moved_at": "2026-01-31T13:47:00.280534"
+  },
+  {
+    "id": "chitty-auth-done",
+    "text": "Login & auth system implementation",
+    "priority": "high",
+    "column": "done",
+    "section": "Development",
+    "timestamp": "2026-01-31T13:42:58.576805"
+  },
+  {
+    "id": "chitty-kanban-done",
+    "text": "Task board with 3-state kanban",
+    "priority": "high",
+    "column": "done",
+    "section": "Development",
+    "timestamp": "2026-01-31T13:42:58.576805"
+  },
+  {
+    "id": "chitty-emoji-status",
+    "text": "Add cute emoji status indicators to AI Status panel",
+    "priority": "high",
+    "column": "done",
+    "section": "Development",
+    "timestamp": "2026-01-31T13:47:00.280534",
+    "moved_at": "2026-01-31T13:47:00.280534"
+  },
+  {
+    "id": "chitty-github-prep",
+    "text": "Structure project and push to GitHub",
+    "priority": "high",
+    "column": "done",
+    "section": "Development",
+    "timestamp": "2026-01-31T14:04:08.333998",
+    "moved_at": "2026-01-31T14:07:12.220905"
+  }
+]

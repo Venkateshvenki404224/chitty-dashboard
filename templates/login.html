@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>🤖 Chitty Dashboard - Login</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="64x64" href="{{ url_for('static', filename='images/favicon.png') }}">
+
+    <!-- Perfect Scrollbar -->
+    <link type="text/css" href="{{ url_for('static', filename='vendor/perfect-scrollbar.css') }}" rel="stylesheet">
+    <!-- App CSS -->
+    <link type="text/css" href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+    <!-- Material Design Icons -->
+    <link type="text/css" href="{{ url_for('static', filename='css/vendor-material-icons.css') }}" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link type="text/css" href="{{ url_for('static', filename='css/vendor-fontawesome-free.css') }}" rel="stylesheet">
+</head>
+<body class="layout-login">
+
+    <div class="layout-login__overlay"></div>
+    <div class="layout-login__form bg-white" data-perfect-scrollbar>
+        <div class="d-flex justify-content-center mt-2 mb-5 navbar-light">
+            <a href="/" class="navbar-brand" style="min-width: 0">
+                <span style="font-size: 1.8rem;">🤖</span>
+                <span style="font-weight: 700; font-size: 1.2rem;">Chitty Dashboard</span>
+            </a>
+        </div>
+
+        <h4 class="m-0">Welcome back!</h4>
+        <p class="mb-5">Login to access the Chitty Dashboard</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('login', next=request.args.get('next', '')) }}" novalidate>
+            <div class="form-group">
+                <label class="text-label" for="username">Username:</label>
+                <div class="input-group input-group-merge">
+                    <input id="username"
+                           name="username"
+                           type="text"
+                           required
+                           class="form-control form-control-prepended"
+                           placeholder="Enter your username"
+                           autofocus>
+                    <div class="input-group-prepend">
+                        <div class="input-group-text">
+                            <span class="fa fa-user"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="text-label" for="password">Password:</label>
+                <div class="input-group input-group-merge">
+                    <input id="password"
+                           name="password"
+                           type="password"
+                           required
+                           class="form-control form-control-prepended"
+                           placeholder="Enter your password">
+                    <div class="input-group-prepend">
+                        <div class="input-group-text">
+                            <span class="fa fa-key"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group mb-5">
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" name="remember" id="remember" checked>
+                    <label class="custom-control-label" for="remember">Remember me</label>
+                </div>
+            </div>
+            <div class="form-group text-center">
+                <button class="btn btn-primary btn-block mb-3" type="submit">
+                    <i class="material-icons icon-16pt mr-1">lock_open</i> Login
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- jQuery -->
+    <script src="{{ url_for('static', filename='vendor/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/popper.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/perfect-scrollbar.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/dom-factory.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/material-design-kit.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

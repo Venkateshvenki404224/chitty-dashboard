@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en"
+      dir="ltr">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible"
+              content="IE=edge">
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>🤖 Chitty Dashboard{% block title_suffix %} - {{ page|default('Home') | title }}{% endblock %}</title>
+
+        <!-- Favicon -->
+        <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+        <link rel="icon" type="image/png" sizes="64x64" href="{{ url_for('static', filename='images/favicon.png') }}">
+        <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+
+        <!-- Perfect Scrollbar -->
+        <link type="text/css"
+              href="{{ url_for('static', filename='vendor/perfect-scrollbar.css') }}"
+              rel="stylesheet">
+
+        <!-- App CSS -->
+        <link type="text/css"
+              href="{{ url_for('static', filename='css/app.css') }}"
+              rel="stylesheet">
+
+        <!-- Material Design Icons -->
+        <link type="text/css"
+              href="{{ url_for('static', filename='css/vendor-material-icons.css') }}"
+              rel="stylesheet">
+
+        <!-- Font Awesome FREE Icons -->
+        <link type="text/css"
+              href="{{ url_for('static', filename='css/vendor-fontawesome-free.css') }}"
+              rel="stylesheet">
+
+        {% block extra_css %}{% endblock %}
+
+        <style>
+            .chitty-brand { font-weight: 700; font-size: 1.1rem; }
+            .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+            .status-dot.online { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
+            .status-dot.offline { background: #f44336; }
+            .stat-card .stat-value { font-size: 1.8rem; font-weight: 700; }
+            .stat-card .stat-label { font-size: 0.85rem; color: #888; }
+            .activity-item { border-left: 3px solid #5567FF; padding-left: 12px; margin-bottom: 10px; }
+            .memory-content { max-height: 600px; overflow-y: auto; }
+            .memory-content pre { background: #f5f5f5; padding: 12px; border-radius: 4px; }
+            .memory-content table { width: 100%; }
+            .memory-content table th, .memory-content table td { padding: 6px 10px; border: 1px solid #ddd; }
+            .kanban-column { min-height: 200px; }
+            .task-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+            .task-card .task-source { font-size: 0.75rem; color: #999; }
+            .auto-refresh-indicator { font-size: 0.7rem; opacity: 0.6; }
+        </style>
+    </head>
+
+    <body class="layout-default">
+
+        <div class="preloader"></div>
+
+        <!-- Header Layout -->
+        <div class="mdk-header-layout js-mdk-header-layout">
+
+            <!-- Header -->
+
+            <div id="header"
+                 class="mdk-header js-mdk-header m-0"
+                 data-fixed>
+                <div class="mdk-header__content">
+
+                    <div class="navbar navbar-expand-sm navbar-main navbar-dark bg-dark  pr-0"
+                         id="navbar"
+                         data-primary>
+                        <div class="container-fluid p-0">
+
+                            <!-- Navbar toggler -->
+
+                            <button class="navbar-toggler navbar-toggler-right d-block d-lg-none"
+                                    type="button"
+                                    data-toggle="sidebar">
+                                <span class="navbar-toggler-icon"></span>
+                            </button>
+
+                            <!-- Navbar Brand -->
+                            <a href="/"
+                               class="navbar-brand ">
+                                <img src="{{ url_for('static', filename='images/chitty-logo.png') }}"
+                                     alt="Chitty"
+                                     style="height: 30px;">
+                            </a>
+
+                            <div class="d-none d-sm-flex flex"></div>
+
+                            <ul class="nav navbar-nav d-none d-md-flex">
+                                <li class="nav-item">
+                                    <span class="nav-link">
+                                        <span class="status-dot online mr-1" id="status-dot"></span>
+                                        <span class="text-light" id="status-text">Online</span>
+                                    </span>
+                                </li>
+                            </ul>
+
+                            <ul class="nav navbar-nav ml-auto d-none d-md-flex">
+                                {% block notifications %}{% endblock %}
+                            </ul>
+
+                            {% if current_user %}
+                            <ul class="nav navbar-nav d-none d-sm-flex border-left navbar-height align-items-center">
+                                <li class="nav-item dropdown">
+                                    <a href="#account_menu"
+                                       class="nav-link dropdown-toggle"
+                                       data-toggle="dropdown"
+                                       data-caret="false">
+                                        <span class="mr-1 d-flex-inline">
+                                            <span class="text-light">{{ current_user.username }}</span>
+                                        </span>
+                                        <i class="material-icons text-light">account_circle</i>
+                                    </a>
+                                    <div id="account_menu"
+                                         class="dropdown-menu dropdown-menu-right">
+                                        <div class="dropdown-item-text dropdown-item-text--lh">
+                                            <div><strong>{{ current_user.username }}</strong></div>
+                                            <div class="text-muted">{{ current_user.role }}</div>
+                                        </div>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item"
+                                           href="/"><i class="material-icons">dvr</i> Dashboard</a>
+                                        {% if current_user.role == 'admin' %}
+                                        <a class="dropdown-item"
+                                           href="{{ url_for('admin_panel') }}"><i class="material-icons">supervisor_account</i> Admin Panel</a>
+                                        {% endif %}
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item"
+                                           href="{{ url_for('logout') }}"><i class="material-icons">exit_to_app</i> Logout</a>
+                                    </div>
+                                </li>
+                            </ul>
+                            {% endif %}
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- // END Header -->
+
+            <!-- Header Layout Content -->
+            <div class="mdk-header-layout__content">
+
+                <div class="mdk-drawer-layout js-mdk-drawer-layout"
+                     data-push
+                     data-responsive-width="992px">
+                    <div class="mdk-drawer-layout__content page">
+
+                        <div class="container-fluid page__heading-container">
+                            <div class="page__heading d-flex align-items-end">
+                                <div class="flex">
+                                    <nav aria-label="breadcrumb">
+                                        <ol class="breadcrumb mb-0">
+                                            <li class="breadcrumb-item"><a href="/">Home</a></li>
+                                            {% block breadcrumb %}
+                                            <li class="breadcrumb-item active"
+                                                aria-current="page">{{ page|default('Dashboard') | title }}</li>
+                                            {% endblock %}
+                                        </ol>
+                                    </nav>
+                                    <h1 class="m-0">{% block page_title %}Dashboard{% endblock %}</h1>
+                                </div>
+                                <div>
+                                    <span class="auto-refresh-indicator" id="refresh-indicator">
+                                        <i class="material-icons icon-16pt">autorenew</i> Auto-refresh: 15s
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="container-fluid page__container">
+                            {% block content %}{% endblock %}
+                        </div>
+
+                    </div>
+                    <!-- // END drawer-layout__content -->
+
+                    <div class="mdk-drawer  js-mdk-drawer"
+                         id="default-drawer"
+                         data-align="start">
+                        <div class="mdk-drawer__content">
+                            <div class="sidebar sidebar-light sidebar-left sidebar-p-t"
+                                 data-perfect-scrollbar>
+                                <div class="sidebar-heading">Menu</div>
+                                <ul class="sidebar-menu">
+                                    <li class="sidebar-menu-item {{ 'active open' if page == 'dashboard' }}">
+                                        <a class="sidebar-menu-button"
+                                           href="/">
+                                            <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">dvr</i>
+                                            <span class="sidebar-menu-text">Dashboard</span>
+                                        </a>
+                                    </li>
+
+                                    <li class="sidebar-menu-item {{ 'open' if page in ['tasks', 'activity', 'notes'] }}">
+                                        <a class="sidebar-menu-button"
+                                           data-toggle="collapse"
+                                           href="#workspace_menu">
+                                            <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">slideshow</i>
+                                            <span class="sidebar-menu-text">Workspace</span>
+                                            <span class="ml-auto sidebar-menu-toggle-icon"></span>
+                                        </a>
+                                        <ul class="sidebar-submenu collapse {{ 'show' if page in ['tasks', 'activity', 'notes'] }}"
+                                            id="workspace_menu">
+                                            <li class="sidebar-menu-item {{ 'active' if page == 'tasks' }}">
+                                                <a class="sidebar-menu-button"
+                                                   href="/tasks">
+                                                    <span class="sidebar-menu-text">Tasks</span>
+                                                </a>
+                                            </li>
+                                            <li class="sidebar-menu-item {{ 'active' if page == 'activity' }}">
+                                                <a class="sidebar-menu-button"
+                                                   href="/activity">
+                                                    <span class="sidebar-menu-text">Activity</span>
+                                                </a>
+                                            </li>
+                                            <li class="sidebar-menu-item {{ 'active' if page == 'notes' }}">
+                                                <a class="sidebar-menu-button"
+                                                   href="/notes">
+                                                    <span class="sidebar-menu-text">Notes</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </li>
+
+                                    <li class="sidebar-menu-item {{ 'open' if page in ['docs', 'emails', 'memory'] }}">
+                                        <a class="sidebar-menu-button"
+                                           data-toggle="collapse"
+                                           href="#data_menu">
+                                            <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">description</i>
+                                            <span class="sidebar-menu-text">Data</span>
+                                            <span class="ml-auto sidebar-menu-toggle-icon"></span>
+                                        </a>
+                                        <ul class="sidebar-submenu collapse {{ 'show' if page in ['docs', 'emails', 'memory'] }}"
+                                            id="data_menu">
+                                            <li class="sidebar-menu-item {{ 'active' if page == 'docs' }}">
+                                                <a class="sidebar-menu-button"
+                                                   href="/docs">
+                                                    <span class="sidebar-menu-text">Documents</span>
+                                                </a>
+                                            </li>
+                                            <li class="sidebar-menu-item {{ 'active' if page == 'emails' }}">
+                                                <a class="sidebar-menu-button"
+                                                   href="/emails">
+                                                    <span class="sidebar-menu-text">Emails</span>
+                                                </a>
+                                            </li>
+                                            <li class="sidebar-menu-item {{ 'active' if page == 'memory' }}">
+                                                <a class="sidebar-menu-button"
+                                                   href="/memory">
+                                                    <span class="sidebar-menu-text">Memory</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </li>
+
+                                    <li class="sidebar-menu-item {{ 'active' if page == 'system' }}">
+                                        <a class="sidebar-menu-button"
+                                           href="/system">
+                                            <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">settings</i>
+                                            <span class="sidebar-menu-text">System</span>
+                                        </a>
+                                    </li>
+                                </ul>
+
+                                {% if current_user and current_user.role == 'admin' %}
+                                <div class="sidebar-heading">Admin</div>
+                                <div class="sidebar-block p-0 mb-0">
+                                    <ul class="sidebar-menu">
+                                        <li class="sidebar-menu-item {{ 'active' if page == 'admin' }}">
+                                            <a class="sidebar-menu-button"
+                                               href="{{ url_for('admin_panel') }}">
+                                                <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">supervisor_account</i>
+                                                <span class="sidebar-menu-text">User Management</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                {% endif %}
+
+                                <div class="sidebar-p-a sidebar-b-y">
+                                    <div class="d-flex align-items-top mb-2">
+                                        <div class="sidebar-heading m-0 p-0 flex text-body">System Health</div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>CPU</small>
+                                        <small id="sidebar-cpu">--</small>
+                                    </div>
+                                    <div class="progress mb-2" style="height: 4px;">
+                                        <div class="progress-bar bg-primary" id="sidebar-cpu-bar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>Memory</small>
+                                        <small id="sidebar-mem">--</small>
+                                    </div>
+                                    <div class="progress mb-2" style="height: 4px;">
+                                        <div class="progress-bar bg-warning" id="sidebar-mem-bar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>Disk</small>
+                                        <small id="sidebar-disk">--</small>
+                                    </div>
+                                    <div class="progress" style="height: 4px;">
+                                        <div class="progress-bar bg-success" id="sidebar-disk-bar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center sidebar-p-a border-bottom sidebar-account">
+                                    <span class="flex d-flex align-items-center text-body">
+                                        <span style="font-size: 1.5rem;" class="mr-2">🤖</span>
+                                        <span class="flex d-flex flex-column">
+                                            {% if current_user %}
+                                            <strong>{{ current_user.username }}</strong>
+                                            <small class="text-muted text-uppercase">{{ current_user.role }}</small>
+                                            {% else %}
+                                            <strong>Chitty</strong>
+                                            <small class="text-muted text-uppercase">AI Assistant</small>
+                                            {% endif %}
+                                        </span>
+                                    </span>
+                                    {% if current_user %}
+                                    <a href="{{ url_for('logout') }}" class="text-muted" title="Logout">
+                                        <i class="material-icons icon-16pt">exit_to_app</i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- // END drawer-layout -->
+
+            </div>
+            <!-- // END header-layout__content -->
+
+        </div>
+        <!-- // END header-layout -->
+
+        <!-- jQuery -->
+        <script src="{{ url_for('static', filename='vendor/jquery.min.js') }}"></script>
+
+        <!-- Bootstrap -->
+        <script src="{{ url_for('static', filename='vendor/popper.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='vendor/bootstrap.min.js') }}"></script>
+
+        <!-- Perfect Scrollbar -->
+        <script src="{{ url_for('static', filename='vendor/perfect-scrollbar.min.js') }}"></script>
+
+        <!-- DOM Factory -->
+        <script src="{{ url_for('static', filename='vendor/dom-factory.js') }}"></script>
+
+        <!-- MDK -->
+        <script src="{{ url_for('static', filename='vendor/material-design-kit.js') }}"></script>
+
+        <!-- App -->
+        <script src="{{ url_for('static', filename='js/toggle-check-all.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/check-selected-row.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/dropdown.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/sidebar-mini.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+        {% block extra_js %}{% endblock %}
+
+        <script>
+            // Auto-refresh status data
+            function refreshStatus() {
+                fetch('/api/status')
+                    .then(r => r.json())
+                    .then(data => {
+                        // Update sidebar health bars
+                        document.getElementById('sidebar-cpu').textContent = data.cpu + '%';
+                        document.getElementById('sidebar-cpu-bar').style.width = data.cpu + '%';
+                        document.getElementById('sidebar-mem').textContent = data.memory + '%';
+                        document.getElementById('sidebar-mem-bar').style.width = data.memory + '%';
+                        document.getElementById('sidebar-disk').textContent = data.disk + '%';
+                        document.getElementById('sidebar-disk-bar').style.width = data.disk + '%';
+
+                        // Color coding
+                        var cpuBar = document.getElementById('sidebar-cpu-bar');
+                        cpuBar.className = 'progress-bar ' + (data.cpu > 80 ? 'bg-danger' : data.cpu > 50 ? 'bg-warning' : 'bg-primary');
+                        var memBar = document.getElementById('sidebar-mem-bar');
+                        memBar.className = 'progress-bar ' + (data.memory > 80 ? 'bg-danger' : data.memory > 50 ? 'bg-warning' : 'bg-success');
+
+                        // Update status dot
+                        document.getElementById('status-dot').className = 'status-dot online mr-1';
+                        document.getElementById('status-text').textContent = 'Online';
+                    })
+                    .catch(() => {
+                        document.getElementById('status-dot').className = 'status-dot offline mr-1';
+                        document.getElementById('status-text').textContent = 'Offline';
+                    });
+            }
+
+            refreshStatus();
+            setInterval(refreshStatus, 15000);
+        </script>
+
+    </body>
+
+</html>

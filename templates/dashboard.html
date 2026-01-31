@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-panel { border-left: 4px solid; }
+    .status-panel.border-success { border-left-color: #4caf50 !important; }
+    .status-panel.border-warning { border-left-color: #ff9800 !important; }
+    .status-panel.border-danger { border-left-color: #f44336 !important; }
+    .session-badge { font-size: 0.75rem; padding: 2px 8px; }
+    .pulse-dot { animation: bounce 2s infinite; display: inline-block; }
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        25% { transform: translateY(-6px); }
+        50% { transform: translateY(0); }
+        75% { transform: translateY(-3px); }
+    }
+    .status-panel.border-warning .pulse-dot { animation: snooze 3s infinite; }
+    @keyframes snooze {
+        0%, 100% { transform: rotate(0deg); opacity: 1; }
+        50% { transform: rotate(-10deg); opacity: 0.6; }
+    }
+    .status-panel.border-danger .pulse-dot { animation: dead 2s infinite; }
+    @keyframes dead {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- AI Status Panel -->
+<div class="card mb-4 status-panel border-{{ ai_status.status_class }}" id="status-panel">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-3">
+                <div class="d-flex align-items-center">
+                    <span style="font-size: 2.5rem;" class="mr-3 pulse-dot" id="status-emoji">{{ ai_status.status_emoji }}</span>
+                    <div>
+                        <h4 class="m-0 font-weight-bold">AI Status</h4>
+                        <span class="badge badge-{{ ai_status.status_class }} text-uppercase" id="status-badge">{{ ai_status.ai_status }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted d-block">Current Task</small>
+                <strong id="current-task">{{ ai_status.current_task }}</strong>
+            </div>
+            <div class="col-md-2">
+                <small class="text-muted d-block">Last Heartbeat</small>
+                <strong id="last-heartbeat">{{ ai_status.heartbeat_ago or 'N/A' }}</strong>
+                {% if ai_status.last_heartbeat %}
+                <br><small class="text-muted" id="heartbeat-time">{{ ai_status.last_heartbeat }}</small>
+                {% endif %}
+            </div>
+            <div class="col-md-2">
+                <small class="text-muted d-block">Uptime</small>
+                <strong id="ai-uptime">{{ ai_status.uptime or sys_info.uptime }}</strong>
+            </div>
+            <div class="col-md-2">
+                <small class="text-muted d-block">Active Sessions</small>
+                <div id="session-count">
+                    {% set active = ai_status.active_sessions|selectattr('active')|list %}
+                    <strong class="{% if active %}text-success{% else %}text-muted{% endif %}">{{ active|length }}</strong>
+                    <small class="text-muted">/ {{ ai_status.active_sessions|length }} total</small>
+                </div>
+            </div>
+        </div>
+        {% if ai_status.active_sessions %}
+        <div class="mt-3 pt-3 border-top" id="sessions-list">
+            <small class="text-muted d-block mb-2">Sub-agent Sessions:</small>
+            {% for s in ai_status.active_sessions %}
+            <span class="badge session-badge {% if s.active %}badge-success{% else %}badge-secondary{% endif %} mr-1 mb-1"
+                  title="Modified: {{ s.modified }} ({{ s.age_minutes }}m ago)">
+                {{ s.name|truncate(30) }}
+                {% if s.active %}<span class="pulse-dot">●</span>{% endif %}
+            </span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Status Cards Row -->
+<div class="row card-group-row mb-4">
+    <div class="col-lg-3 col-md-6 card-group-row__col">
+        <div class="card card-group-row__card">
+            <div class="card-body d-flex align-items-center">
+                <div class="flex">
+                    <div class="card-header__title mb-1">System</div>
+                    <div class="d-flex align-items-center">
+                        <span class="status-dot online mr-2"></span>
+                        <span class="text-success font-weight-bold">Online</span>
+                    </div>
+                    <small class="text-muted">Uptime: {{ sys_info.uptime }}</small>
+                </div>
+                <i class="material-icons text-success" style="font-size: 48px; opacity: 0.3;">cloud_done</i>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 card-group-row__col">
+        <div class="card card-group-row__card">
+            <div class="card-body d-flex align-items-center">
+                <div class="flex">
+                    <div class="card-header__title mb-1">Memory Files</div>
+                    <div class="stat-value" style="font-size: 1.8rem; font-weight: 700;">{{ mem_stats.total_files }}</div>
+                    <small class="text-muted">{{ 'MEMORY.md ✓' if mem_stats.has_main_memory else 'No MEMORY.md' }}</small>
+                </div>
+                <i class="material-icons text-primary" style="font-size: 48px; opacity: 0.3;">psychology</i>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 card-group-row__col">
+        <div class="card card-group-row__card">
+            <div class="card-body d-flex align-items-center">
+                <div class="flex">
+                    <div class="card-header__title mb-1">Tasks</div>
+                    <div class="d-flex align-items-baseline">
+                        <span style="font-size: 1.8rem; font-weight: 700;" class="text-warning">{{ task_stats.todo }}</span>
+                        <small class="text-muted ml-2">pending</small>
+                        <span class="mx-2 text-muted">|</span>
+                        <span style="font-size: 1.8rem; font-weight: 700;" class="text-success">{{ task_stats.done }}</span>
+                        <small class="text-muted ml-2">done</small>
+                    </div>
+                </div>
+                <i class="material-icons text-warning" style="font-size: 48px; opacity: 0.3;">assignment</i>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 card-group-row__col">
+        <div class="card card-group-row__card">
+            <div class="card-body d-flex align-items-center">
+                <div class="flex">
+                    <div class="card-header__title mb-1">Email Monitor</div>
+                    <div class="font-weight-bold">{{ email_status.watched_senders|length }} watched</div>
+                    <small class="text-muted">{{ email_status.status or 'Active' }}</small>
+                </div>
+                <i class="material-icons text-info" style="font-size: 48px; opacity: 0.3;">email</i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Health + Activity Row -->
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h4 class="card-header__title m-0">System Health</h4>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between pb-1">
+                    <span><i class="material-icons icon-16pt text-primary mr-1">memory</i> CPU</span>
+                    <strong id="dash-cpu">{{ sys_info.cpu.percent }}%</strong>
+                </div>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar bg-primary" id="dash-cpu-bar" style="width: {{ sys_info.cpu.percent }}%"></div>
+                </div>
+
+                <div class="d-flex justify-content-between pb-1">
+                    <span><i class="material-icons icon-16pt text-warning mr-1">storage</i> Memory</span>
+                    <strong id="dash-mem">{{ sys_info.memory.percent }}%</strong>
+                </div>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar bg-warning" id="dash-mem-bar" style="width: {{ sys_info.memory.percent }}%"></div>
+                </div>
+
+                <div class="d-flex justify-content-between pb-1">
+                    <span><i class="material-icons icon-16pt text-success mr-1">sd_storage</i> Disk</span>
+                    <strong id="dash-disk">{{ sys_info.disk.percent }}%</strong>
+                </div>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar bg-success" id="dash-disk-bar" style="width: {{ sys_info.disk.percent }}%"></div>
+                </div>
+
+                <hr>
+                <small class="text-muted">
+                    <div><strong>Host:</strong> {{ sys_info.hostname }}</div>
+                    <div><strong>OS:</strong> {{ sys_info.os }}</div>
+                    <div><strong>Boot:</strong> {{ sys_info.boot_time }}</div>
+                    <div><strong>RAM:</strong> {{ sys_info.memory.used }} / {{ sys_info.memory.total }}</div>
+                    <div><strong>Disk:</strong> {{ sys_info.disk.used }} / {{ sys_info.disk.total }}</div>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white d-flex align-items-center">
+                <h4 class="card-header__title flex m-0">Recent Activity</h4>
+                <a href="/activity" class="text-muted">View All →</a>
+            </div>
+            <div class="card-body" id="activity-feed">
+                {% if activities %}
+                    {% for entry in activities %}
+                    <div class="activity-item">
+                        <div class="d-flex align-items-start">
+                            <span class="mr-2 mt-1">{{ entry.emoji }}</span>
+                            <div class="flex">
+                                <div>{{ entry.text }}</div>
+                                <small class="text-muted">
+                                    {% if entry.time %}{{ entry.time }}{% endif %}
+                                    {% if entry.section %}<span class="badge badge-light ml-1">{{ entry.section }}</span>{% endif %}
+                                    <span class="badge badge-soft-primary ml-1">{{ entry.category_label }}</span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="material-icons" style="font-size: 48px; opacity: 0.3;">event_note</i>
+                        <div>No activity recorded today yet</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function refreshDashboard() {
+        fetch('/api/status')
+            .then(r => r.json())
+            .then(data => {
+                // System health
+                document.getElementById('dash-cpu').textContent = data.cpu + '%';
+                document.getElementById('dash-cpu-bar').style.width = data.cpu + '%';
+                document.getElementById('dash-mem').textContent = data.memory + '%';
+                document.getElementById('dash-mem-bar').style.width = data.memory + '%';
+                document.getElementById('dash-disk').textContent = data.disk + '%';
+                document.getElementById('dash-disk-bar').style.width = data.disk + '%';
+
+                // AI Status panel
+                if (data.ai_status) {
+                    var ai = data.ai_status;
+                    var panel = document.getElementById('status-panel');
+                    panel.className = 'card mb-4 status-panel border-' + ai.status_class;
+                    document.getElementById('status-emoji').textContent = ai.status_emoji;
+                    document.getElementById('status-badge').textContent = ai.ai_status;
+                    document.getElementById('status-badge').className = 'badge badge-' + ai.status_class + ' text-uppercase';
+                    document.getElementById('current-task').textContent = ai.current_task;
+                    document.getElementById('last-heartbeat').textContent = ai.heartbeat_ago || 'N/A';
+                    if (ai.uptime) document.getElementById('ai-uptime').textContent = ai.uptime;
+
+                    var active = ai.active_sessions ? ai.active_sessions.filter(s => s.active) : [];
+                    document.getElementById('session-count').innerHTML =
+                        '<strong class="' + (active.length > 0 ? 'text-success' : 'text-muted') + '">' + active.length + '</strong>' +
+                        ' <small class="text-muted">/ ' + (ai.active_sessions ? ai.active_sessions.length : 0) + ' total</small>';
+                }
+            });
+    }
+    setInterval(refreshDashboard, 15000);
+</script>
+{% endblock %}

@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block page_title %}📋 Task Board{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kanban-column { min-height: 300px; }
+    .task-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; margin-bottom: 8px; transition: box-shadow 0.2s; }
+    .task-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .task-card .task-source { font-size: 0.72rem; color: #999; }
+    .task-card .task-priority { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .priority-high { background: #f44336; }
+    .priority-normal { background: #ff9800; }
+    .priority-low { background: #4caf50; }
+    .task-card.dashboard-task { border-left: 3px solid #5567FF; }
+    .task-card.file-task { border-left: 3px solid #6c757d; }
+    .task-card .section-badge {
+        display: inline-block;
+        font-size: 0.68rem;
+        background: #e8eaf6;
+        color: #3949ab;
+        padding: 1px 6px;
+        border-radius: 3px;
+        margin-top: 2px;
+    }
+    .task-card .source-badge {
+        display: inline-block;
+        font-size: 0.66rem;
+        background: #f3f3f3;
+        color: #888;
+        padding: 1px 5px;
+        border-radius: 3px;
+    }
+    .move-btn {
+        border: none;
+        background: #f0f0f0;
+        border-radius: 4px;
+        cursor: pointer;
+        padding: 2px 8px;
+        font-size: 0.8rem;
+        transition: background 0.15s;
+    }
+    .move-btn:hover { background: #ddd; }
+    .move-btn.move-forward { color: #1976d2; }
+    .move-btn.move-back { color: #ff8f00; }
+    .move-btn.move-done { color: #388e3c; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Add Task Form -->
+<div class="card mb-4">
+    <div class="card-header bg-white d-flex align-items-center">
+        <h4 class="card-header__title flex m-0"><i class="material-icons icon-16pt mr-1">add_circle</i> Add Task</h4>
+    </div>
+    <div class="card-body">
+        <form id="add-task-form" class="d-flex align-items-end">
+            <div class="flex mr-3">
+                <label class="form-label mb-1">Task Description</label>
+                <input type="text" class="form-control" id="task-text" placeholder="What needs to be done?" required>
+            </div>
+            <div class="mr-3" style="min-width: 120px;">
+                <label class="form-label mb-1">Priority</label>
+                <select class="form-control" id="task-priority">
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+            <div class="mr-3" style="min-width: 140px;">
+                <label class="form-label mb-1">Column</label>
+                <select class="form-control" id="task-column">
+                    <option value="todo">To Do</option>
+                    <option value="in_progress">In Progress</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="material-icons icon-16pt">add</i> Add
+            </button>
+        </form>
+    </div>
+</div>
+
+{# ── Macro for rendering a task card ── #}
+{% macro task_card(task, column) %}
+<div class="task-card {% if task.source_type == 'dashboard' %}dashboard-task{% else %}file-task{% endif %}">
+    <div class="d-flex align-items-start">
+        <span class="task-priority priority-{{ task.priority or 'normal' }} mr-2 mt-2"></span>
+        <div class="flex" style="min-width:0;">
+            <div style="word-break:break-word;">{% if column == 'done' %}<s>{{ task.text }}</s>{% else %}{{ task.text }}{% endif %}</div>
+            <div class="mt-1">
+                {% if task.section %}<span class="section-badge">{{ task.section }}</span> {% endif %}
+                <span class="source-badge">📁 {{ task.source }}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-1">
+                {% if task.timestamp %}<small class="text-muted">{{ task.timestamp[:16] }}</small>{% else %}<span></span>{% endif %}
+                <div>
+                    {# Move buttons depending on column #}
+                    {% if column == 'todo' %}
+                        <button class="move-btn move-forward" data-task='{{ task | tojson }}' data-col="in_progress" onclick="moveTaskBtn(this)" title="Move to In Progress">▶ WIP</button>
+                    {% elif column == 'in_progress' %}
+                        <button class="move-btn move-back" data-task='{{ task | tojson }}' data-col="todo" onclick="moveTaskBtn(this)" title="Move back to To Do">◀ ToDo</button>
+                        <button class="move-btn move-done" data-task='{{ task | tojson }}' data-col="done" onclick="moveTaskBtn(this)" title="Mark Done">✓ Done</button>
+                    {% elif column == 'done' %}
+                        <button class="move-btn move-back" data-task='{{ task | tojson }}' data-col="in_progress" onclick="moveTaskBtn(this)" title="Move to In Progress">◀ WIP</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+<!-- Kanban Board -->
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white d-flex align-items-center">
+                <h4 class="card-header__title flex m-0">
+                    <i class="material-icons icon-16pt text-warning mr-1">radio_button_unchecked</i>
+                    To Do
+                </h4>
+                <span class="badge badge-warning">{{ tasks.todo|length }}</span>
+            </div>
+            <div class="card-body kanban-column" id="col-todo">
+                {% if tasks.todo %}
+                    {% for task in tasks.todo %}
+                        {{ task_card(task, 'todo') }}
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="material-icons" style="opacity: 0.3;">check_circle</i>
+                        <div>No pending tasks</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white d-flex align-items-center">
+                <h4 class="card-header__title flex m-0">
+                    <i class="material-icons icon-16pt text-info mr-1">sync</i>
+                    In Progress
+                </h4>
+                <span class="badge badge-info">{{ tasks.in_progress|length }}</span>
+            </div>
+            <div class="card-body kanban-column" id="col-in-progress">
+                {% if tasks.in_progress %}
+                    {% for task in tasks.in_progress %}
+                        {{ task_card(task, 'in_progress') }}
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="material-icons" style="opacity: 0.3;">hourglass_empty</i>
+                        <div>Nothing in progress</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white d-flex align-items-center">
+                <h4 class="card-header__title flex m-0">
+                    <i class="material-icons icon-16pt text-success mr-1">check_circle</i>
+                    Done
+                </h4>
+                <span class="badge badge-success">{{ tasks.done|length }}</span>
+            </div>
+            <div class="card-body kanban-column" id="col-done">
+                {% if tasks.done %}
+                    {% for task in tasks.done %}
+                        {{ task_card(task, 'done') }}
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="material-icons" style="opacity: 0.3;">inbox</i>
+                        <div>No completed tasks</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('add-task-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var text = document.getElementById('task-text').value.trim();
+        var priority = document.getElementById('task-priority').value;
+        var column = document.getElementById('task-column').value;
+        if (!text) return;
+
+        fetch('/api/tasks/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({text: text, priority: priority, column: column})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                location.reload();
+            } else {
+                alert(data.error || 'Failed to add task');
+            }
+        });
+    });
+
+    function moveTaskBtn(btn) {
+        var task = JSON.parse(btn.getAttribute('data-task'));
+        var newColumn = btn.getAttribute('data-col');
+        var payload;
+        if (task.source_type === 'file') {
+            payload = {
+                source_type: 'file',
+                source_file: task.source_file,
+                line_num: task.line_num,
+                column: newColumn
+            };
+        } else {
+            payload = {
+                source_type: 'dashboard',
+                id: task.id,
+                column: newColumn
+            };
+        }
+
+        btn.disabled = true;
+        btn.textContent = '...';
+
+        fetch('/api/tasks/move', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                location.reload();
+            } else {
+                alert(data.error || 'Failed to move task');
+                btn.disabled = false;
+            }
+        })
+        .catch(err => {
+            alert('Network error');
+            btn.disabled = false;
+        });
+    }
+</script>
+{% endblock %}

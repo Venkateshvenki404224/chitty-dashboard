@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block page_title %}📜 Activity Log{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-filter .badge { cursor: pointer; font-size: 0.85rem; padding: 6px 12px; }
+    .category-filter .badge:hover { opacity: 0.8; }
+    .activity-entry { border-left: 3px solid #5567FF; padding: 8px 12px; margin-bottom: 8px; border-radius: 0 4px 4px 0; transition: background 0.2s; }
+    .activity-entry:hover { background: #f8f9fa; }
+    .activity-entry.cat-email { border-left-color: #2196F3; }
+    .activity-entry.cat-message { border-left-color: #9C27B0; }
+    .activity-entry.cat-system { border-left-color: #FF5722; }
+    .activity-entry.cat-memory { border-left-color: #4CAF50; }
+    .activity-entry.cat-task { border-left-color: #FF9800; }
+    .activity-entry.cat-ai { border-left-color: #00BCD4; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-3">
+        <!-- Date Filter -->
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h4 class="card-header__title m-0">Filter by Date</h4>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                    <a href="/activity{% if selected_category %}?category={{ selected_category }}{% endif %}" class="list-group-item list-group-item-action {{ 'active' if not selected_date }}">
+                        <i class="material-icons icon-16pt mr-1">view_list</i> All Dates
+                    </a>
+                    {% for d in dates %}
+                    <a href="/activity?date={{ d }}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="list-group-item list-group-item-action {{ 'active' if selected_date == d }}">
+                        <i class="material-icons icon-16pt mr-1">event</i> {{ d }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Filter -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h4 class="card-header__title m-0">Filter by Category</h4>
+            </div>
+            <div class="card-body category-filter">
+                <a href="/activity{% if selected_date %}?date={{ selected_date }}{% endif %}" class="badge badge-{% if not selected_category %}primary{% else %}light text-dark{% endif %} d-block mb-2">
+                    All Categories
+                </a>
+                {% for key, cat in categories.items() %}
+                <a href="/activity?{% if selected_date %}date={{ selected_date }}&{% endif %}category={{ key }}" class="badge badge-{% if selected_category == key %}primary{% else %}light text-dark{% endif %} d-block mb-2">
+                    {{ cat.emoji }} {{ cat.label }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-9">
+        <div class="card">
+            <div class="card-header bg-white d-flex align-items-center">
+                <h4 class="card-header__title flex m-0">
+                    Activities
+                    {% if selected_date %}<span class="badge badge-primary ml-2">{{ selected_date }}</span>{% endif %}
+                    {% if selected_category %}<span class="badge badge-info ml-2">{{ categories[selected_category].emoji }} {{ categories[selected_category].label }}</span>{% endif %}
+                </h4>
+                <span class="text-muted">{{ activities|length }} entries</span>
+            </div>
+            <div class="card-body" id="activity-list">
+                {% if activities %}
+                    {% set current_date = {'value': ''} %}
+                    {% for entry in activities %}
+                        {% if entry.date != current_date.value %}
+                            {% if current_date.update({'value': entry.date}) %}{% endif %}
+                            {% if not loop.first %}<hr>{% endif %}
+                            <h5 class="text-muted mt-3"><i class="material-icons icon-16pt">event</i> {{ entry.date }}</h5>
+                        {% endif %}
+                        <div class="activity-entry cat-{{ entry.category }}">
+                            <div class="d-flex align-items-start">
+                                <span class="mr-2 mt-1" style="font-size: 1.1rem;">{{ entry.emoji }}</span>
+                                <div class="flex">
+                                    <div>{{ entry.text }}</div>
+                                    <small class="text-muted">
+                                        {% if entry.time %}<i class="material-icons icon-16pt">schedule</i> {{ entry.time }}{% endif %}
+                                        {% if entry.section %}<span class="badge badge-light ml-1">{{ entry.section }}</span>{% endif %}
+                                        <span class="badge badge-soft-primary ml-1">{{ entry.category_label }}</span>
+                                        {% if entry.source == 'dashboard' %}<span class="badge badge-soft-info ml-1">Dashboard</span>{% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="material-icons" style="font-size: 64px; opacity: 0.3;">event_note</i>
+                        <div class="mt-2">No activities found{{ ' for ' + selected_date if selected_date else '' }}</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh activity every 15s
+    setInterval(function() {
+        fetch('/api/activity?limit=50{% if selected_date %}&date={{ selected_date }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}')
+            .then(r => r.json())
+            .then(data => {
+                // Update count in header
+                var countEl = document.querySelector('.card-header .text-muted');
+                if (countEl) countEl.textContent = data.count + ' entries';
+            });
+    }, 15000);
+</script>
+{% endblock %}

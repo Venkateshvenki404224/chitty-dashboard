@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block page_title %}Memory Viewer{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-3">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h4 class="card-header__title m-0">Memory Files</h4>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <a href="/memory" class="list-group-item list-group-item-action {{ 'active' if not selected_file }}">
+                        <i class="material-icons icon-16pt mr-1">psychology</i> MEMORY.md
+                        {% if main_memory %}<span class="badge badge-primary float-right">Main</span>{% endif %}
+                    </a>
+                    {% for f in files %}
+                    <a href="/memory?file={{ f.filename }}" class="list-group-item list-group-item-action {{ 'active' if selected_file == f.filename }}">
+                        <i class="material-icons icon-16pt mr-1">event_note</i> {{ f.date }}
+                        <small class="text-muted float-right">{{ f.size }}</small>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-9">
+        {% if content %}
+        <div class="card">
+            <div class="card-header bg-white d-flex align-items-center">
+                <h4 class="card-header__title flex m-0">
+                    <i class="material-icons icon-16pt mr-1">description</i> {{ content.filename }}
+                </h4>
+                <a href="/memory" class="btn btn-sm btn-outline-secondary">
+                    <i class="material-icons icon-16pt">close</i>
+                </a>
+            </div>
+            <div class="card-body memory-content">
+                {{ content.html | safe }}
+            </div>
+        </div>
+        {% elif main_memory %}
+        <div class="card">
+            <div class="card-header bg-white">
+                <h4 class="card-header__title m-0">
+                    <i class="material-icons icon-16pt mr-1">psychology</i> MEMORY.md — Long-Term Memory
+                </h4>
+            </div>
+            <div class="card-body memory-content">
+                {{ main_memory.html | safe }}
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center text-muted py-5">
+                <i class="material-icons" style="font-size: 64px; opacity: 0.3;">psychology</i>
+                <div class="mt-2">Select a memory file to view its contents</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
